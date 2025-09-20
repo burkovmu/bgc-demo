@@ -188,6 +188,21 @@
             return typeof window.ethereum !== 'undefined' && window.ethereum.isMetaMask;
         }
 
+        // Проверяем мобильное устройство
+        function isMobile() {
+            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        }
+
+        // Получаем ссылку для мобильного MetaMask
+        function getMobileMetaMaskLink() {
+            const tokenAddress = '0xbfb83b7EEd6DE271C83f5E0b61D629EbC8Fe0fF3';
+            const tokenSymbol = 'BGC';
+            const tokenDecimals = '18';
+            const tokenImage = 'https://raw.githubusercontent.com/burkovmu/bgc-demo/main/logo.png';
+            
+            return `https://metamask.app.link/dapp/${window.location.hostname}${window.location.pathname}?token=${tokenAddress}&symbol=${tokenSymbol}&decimals=${tokenDecimals}&image=${encodeURIComponent(tokenImage)}`;
+        }
+
         // Показать статус с анимацией
         function showStatus(message, type) {
             const statusDiv = document.getElementById('status');
@@ -237,6 +252,14 @@
             
             // Создаем эффект ripple
             createRipple(event);
+            
+            // Проверяем мобильное устройство
+            if (isMobile() && !isMetaMaskInstalled()) {
+                const mobileLink = getMobileMetaMaskLink();
+                showStatus('📱 Открываем MetaMask...', 'warning');
+                window.open(mobileLink, '_blank');
+                return;
+            }
             
             if (!isMetaMaskInstalled()) {
                 showStatus('❌ MetaMask не установлен', 'error');
@@ -296,7 +319,9 @@
 
         // Проверка при загрузке
         window.addEventListener('load', () => {
-            if (!isMetaMaskInstalled()) {
+            if (isMobile()) {
+                showStatus('📱 Нажмите кнопку для открытия в MetaMask', 'warning');
+            } else if (!isMetaMaskInstalled()) {
                 showStatus('⚠️ Установите MetaMask', 'warning');
             }
         });
