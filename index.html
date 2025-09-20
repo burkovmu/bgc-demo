@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bird Gold Coin</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 50%, #2d2d2d 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            text-align: center;
+            background: rgba(20, 20, 20, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 30px;
+            padding: 60px 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            max-width: 400px;
+            width: 100%;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .logo {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 30px;
+            display: block;
+            object-fit: contain;
+        }
+        
+        .title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 10px;
+            letter-spacing: -0.5px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+        }
+        
+        .subtitle {
+            font-size: 16px;
+            color: #b0b0b0;
+            margin-bottom: 40px;
+            font-weight: 400;
+        }
+        
+        .add-token-btn {
+            background: rgba(0, 0, 0, 0.3);
+            color: #ffd700;
+            border: 2px solid #ffd700;
+            padding: 18px 40px;
+            border-radius: 50px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 8px 25px rgba(255, 215, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+            min-width: 280px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .add-token-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 35px rgba(255, 215, 0, 0.4);
+            background: rgba(255, 215, 0, 0.1);
+            border-color: #ffed4e;
+            color: #ffed4e;
+        }
+        
+        .add-token-btn:active {
+            transform: translateY(0);
+        }
+        
+        .add-token-btn:disabled {
+            background: rgba(0, 0, 0, 0.2);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+            border: 2px solid rgba(255, 215, 0, 0.3);
+            color: rgba(255, 215, 0, 0.5);
+        }
+        
+        .status {
+            margin-top: 20px;
+            padding: 12px 20px;
+            border-radius: 25px;
+            font-weight: 500;
+            font-size: 14px;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .status.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        .success { 
+            background: rgba(34, 197, 94, 0.2); 
+            color: #10b981; 
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+        
+        .error { 
+            background: rgba(239, 68, 68, 0.2); 
+            color: #ef4444; 
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+        
+        .warning { 
+            background: rgba(245, 158, 11, 0.2); 
+            color: #f59e0b; 
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+        
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.4);
+            transform: scale(0);
+            animation: ripple 0.6s linear;
+        }
+        
+        @keyframes ripple {
+            to {
+                transform: scale(4);
+                opacity: 0;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .container {
+                padding: 40px 20px;
+            }
+            
+            .add-token-btn {
+                min-width: 240px;
+                padding: 16px 30px;
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img src="logo.png" alt="BGC Logo" class="logo">
+        <h1 class="title">Bird Gold Coin</h1>
+        <p class="subtitle">Добавьте токен в MetaMask</p>
+        
+        <button id="addTokenBtn" class="add-token-btn">
+            Добавить в MetaMask
+        </button>
+        
+        <div id="status" class="status"></div>
+    </div>
+
+    <script>
+        // Конфигурация токена
+        const tokenConfig = {
+            type: 'ERC20',
+            options: {
+                address: '0xbfb83b7EEd6DE271C83f5E0b61D629EbC8Fe0fF3',
+                symbol: 'BGC',
+                decimals: 18,
+                image: window.location.origin + '/logo.png'
+            }
+        };
+
+        // Проверяем MetaMask
+        function isMetaMaskInstalled() {
+            return typeof window.ethereum !== 'undefined' && window.ethereum.isMetaMask;
+        }
+
+        // Показать статус с анимацией
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = message;
+            statusDiv.className = `status ${type} show`;
+            
+            // Автоматически скрыть через 4 секунды
+            setTimeout(() => {
+                statusDiv.className = 'status';
+            }, 4000);
+        }
+
+        // Создать эффект ripple
+        function createRipple(event) {
+            const button = event.currentTarget;
+            const ripple = document.createElement('span');
+            const rect = button.getBoundingClientRect();
+            const size = Math.max(rect.width, rect.height);
+            const x = event.clientX - rect.left - size / 2;
+            const y = event.clientY - rect.top - size / 2;
+            
+            ripple.style.width = ripple.style.height = size + 'px';
+            ripple.style.left = x + 'px';
+            ripple.style.top = y + 'px';
+            ripple.classList.add('ripple');
+            
+            button.appendChild(ripple);
+            
+            setTimeout(() => {
+                ripple.remove();
+            }, 600);
+        }
+
+        // Проверка сети Ethereum
+        async function checkNetwork() {
+            try {
+                const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+                return chainId === '0x1'; // Ethereum Mainnet
+            } catch (error) {
+                return false;
+            }
+        }
+
+        // Добавление токена
+        async function addTokenToMetaMask(event) {
+            const button = document.getElementById('addTokenBtn');
+            
+            // Создаем эффект ripple
+            createRipple(event);
+            
+            if (!isMetaMaskInstalled()) {
+                showStatus('❌ MetaMask не установлен', 'error');
+                return;
+            }
+
+            try {
+                button.disabled = true;
+                button.textContent = '⏳ Подключение...';
+                
+                // Подключаемся к MetaMask
+                await window.ethereum.request({ method: 'eth_requestAccounts' });
+                
+                // Проверяем сеть
+                const isCorrectNetwork = await checkNetwork();
+                if (!isCorrectNetwork) {
+                    showStatus('⚠️ Переключитесь на Ethereum Mainnet', 'warning');
+                    button.disabled = false;
+                    button.textContent = '🦅 Добавить в MetaMask';
+                    return;
+                }
+                
+                button.textContent = '⏳ Добавление...';
+                
+                // Добавляем токен
+                const wasAdded = await window.ethereum.request({
+                    method: 'wallet_watchAsset',
+                    params: tokenConfig
+                });
+
+                if (wasAdded) {
+                    showStatus('✅ Токен добавлен!', 'success');
+                    button.textContent = '✅ Готово';
+                } else {
+                    showStatus('❌ Отклонено', 'error');
+                    button.disabled = false;
+                    button.textContent = '🦅 Добавить в MetaMask';
+                }
+            } catch (error) {
+                console.error('Ошибка:', error);
+                
+                if (error.code === 4001) {
+                    showStatus('❌ Подключение отклонено', 'error');
+                } else if (error.code === 4902) {
+                    showStatus('⚠️ Переключитесь на Ethereum Mainnet', 'warning');
+                } else {
+                    showStatus('❌ Ошибка подключения', 'error');
+                }
+                
+                button.disabled = false;
+                button.textContent = '🦅 Добавить в MetaMask';
+            }
+        }
+
+        // Обработчики событий
+        document.getElementById('addTokenBtn').addEventListener('click', addTokenToMetaMask);
+
+        // Проверка при загрузке
+        window.addEventListener('load', () => {
+            if (!isMetaMaskInstalled()) {
+                showStatus('⚠️ Установите MetaMask', 'warning');
+            }
+        });
+
+        // Обработка изменения сети
+        if (window.ethereum) {
+            window.ethereum.on('chainChanged', (chainId) => {
+                if (chainId === '0x1') {
+                    showStatus('✅ Сеть изменена', 'success');
+                } else {
+                    showStatus('⚠️ Переключитесь на Ethereum Mainnet', 'warning');
+                }
+            });
+        }
+    </script>
+</body>
+</html>
